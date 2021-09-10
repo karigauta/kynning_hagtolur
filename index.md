@@ -28,7 +28,7 @@ Glærur einnig hægt að sýna svona
 </style>
 
 <div class="resp-container">
-    <iframe class="testiframe" src="https://tcgriffith.github.io/xaringan_gh/xaringan_example.html">
+    <iframe class="testiframe" src="https://karigauta.github.io/kynning_hagtolur/xaringan_test_slides.html">
       Fallback text here for unsupporting browsers, of which there are scant few.
     </iframe>
 </div>
