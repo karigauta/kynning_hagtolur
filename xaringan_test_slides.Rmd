@@ -1,0 +1,514 @@
+---
+title: "Hagtölur í landbúnaði"
+subtitle: "2021"
+author: "Bændasamtök Íslands"
+output:
+  xaringan::moon_reader:
+    seal: false
+    includes:
+      after_body: insert_logo.html
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(pxweb)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+source("C:/Users/kari/github_rep/Baendasamtok/utility_functions.R")
+
+
+################ Saekja framleidsluvirdi ###################
+pxq <- pxweb_query("C:/Users/kari/github_rep/Baendasamtok/Baendasamtok/json_queries/framleidsluverd.json")
+
+# thetta saekir gognin fra hagstofu
+framleidsluverd <- pxweb_get("https://px.hagstofa.is:443/pxis/api/v1/is/Atvinnuvegir/landbunadur/landbhagreikn/afkomalandbundadarins/LAN1101.px",
+                             pxq)
+framleidsluverd <- as.data.frame(framleidsluverd)
+colnames(framleidsluverd) <- c("Type", "Indicator", "Product", "Year", "Value")
+
+framleidsluverd$deflated_values <- DeflateValues(value = framleidsluverd$Value, years = framleidsluverd$Year, base = 2020)
+
+framleidsluverd <- framleidsluverd %>%mutate( Desc = case_when( 
+  Product == "01 Korn (þ.m.t. fræ)"              ~ "drop",
+  Product == "01.1 Hveiti og spelt"              ~ "Nytjaplöntur",
+  Product == "01.11 Brauðhveiti og spelt"        ~ "drop",
+  Product == "01.3 Bygg"                         ~ "Nytjaplöntur",
+  Product == "01.4 Hafrar og sumarkornsblöndur"  ~ "Nytjaplöntur",
+  Product == "03 Fóðurjurtir"                    ~ "Gróffóður",
+  Product == "03.9 Aðrar fóðurjurtir"            ~ "drop",
+  Product == "04. Grænmeti og afurðir garðyrkju" ~ "drop",
+  Product == "04.1 Ferskt grænmeti"              ~ "Nytjaplöntur",
+  Product == "04.11 Blómkál"                     ~ "drop",
+  Product == "04.12 Tómatar"                     ~ "drop",
+  Product == "04.19 Annað ferskt grænmeti"       ~ "drop",
+  Product == "04.2 Blómjurtir og aðrar plöntur"  ~ "Nytjaplöntur",
+  Product == "04.21 Garðplöntur"                 ~ "drop",
+  Product == "04.22 Skrautjurtir og blómjurtir"  ~ "drop",
+  Product == "05 Kartöflur (þ.m.t. útsæði)"      ~ "Nytjaplöntur",
+  Product == "11 Dýr"                            ~ "drop",
+  Product == "11.1 Nautgripir"                   ~ "Kjöt og búfé",
+  Product == "11.2 Svín"                         ~ "Kjöt og búfé",
+  Product == "11.3 Dýr af hestaætt"              ~ "Kjöt og búfé",
+  Product == "11.4 Sauðfé og geitur"             ~ "Kjöt og búfé",
+  Product == "11.5 Alifuglar"                    ~ "Kjöt og búfé",
+  Product == "11.9 Önnur dýr"                    ~ "Kjöt og búfé",
+  Product == "12 Dýraafurðir"                    ~ "drop",
+  Product == "12.1 Mjólk"                        ~ "Mjólk",
+  Product == "12.2 Egg"                          ~ "Egg",
+  Product == "12.9 Aðrar dýraafurðir"            ~ "drop",
+  Product == "12.91 Hráull"                      ~ "Ull og annað",
+  Product == "12.93 Aðrar dýraafurðir; annað"    ~ "Ull og annað",
+  Product == "13 Dýr og afurðir dýra (11+12)"    ~ "drop",
+  Product == "14 Framleiðsla landbúnaðarafurða (10+13)" ~ "drop",
+  Product == "15 Landbúnaðarþjónusta"            ~ "Landbúnaðarþjónusta",
+  Product == "16 Landbúnaðarframleiðsla (14+15)" ~ "drop",
+  Product == "17 Aukastarfsemi sem ekki fellur undir landbúnað (óaðgreinanleg)" ~ "Önnur starfsemi á búum",
+  Product == "17.1 Vinnsla landbúnaðarafurða"    ~ "drop",
+  Product == "17.9 Önnur óaðgreinanleg aukastarfsemi sem ekki fellur undir landbúnað (vörur og þjónusta)" ~ "drop",
+  Product == "18 Heildarframleiðsla landbúnaðargeirans (16+17)" ~ "drop"))
+save(framleidsluverd, file = "framleidsluverd.Rdata")
+
+
+############### Saekja afurdir ################
+# pxq <- pxweb_query("C:/Users/kari/github_rep/Baendasamtok/Baendasamtok/json_queries/afurdir.json")
+# afurdir <- pxweb_get("https://px.hagstofa.is:443/pxis/api/v1/is/Atvinnuvegir/landbunadur/landbufe/LAN10103.px",
+#                              pxq)
+# afurdir <- as.data.frame(afurdir)
+# colnames(afurdir) <- c("Type", "Year", "Value")
+# afurdir$Indicator <- "Framleiðsla í tonnum"
+# 
+# 
+# pxq <- pxweb_query("C:/Users/kari/github_rep/Baendasamtok/Baendasamtok/json_queries/kjot_framleidsla.json")
+# kjot_fram <- pxweb_get("https://px.hagstofa.is:443/pxis/api/v1/is/Atvinnuvegir/landbunadur/landframleidsla/LAN10201.px",
+#                              pxq)
+# kjot_fram <- as.data.frame(kjot_fram)
+# colnames(kjot_fram) <- c("Type","Indicator", "Year", "Value")
+# 
+# afurdir <- rbind (afurdir, kjot_fram)
+# save(afurdir, file = "afurdir.Rdata")
+
+
+####### Saekja afkomu #######################
+pxq <- pxweb_query("C:/Users/kari/github_rep/Baendasamtok/Baendasamtok/json_queries/afkoma.json")
+
+# thetta saekir gognin fra hagstofu
+afkoma <- pxweb_get("https://px.hagstofa.is:443/pxis/api/v1/is/Atvinnuvegir/landbunadur/landbhagreikn/afkomalandbundadarins/LAN1105.px",
+                    pxq)
+afkoma <- as.data.frame(afkoma)
+colnames(afkoma) <- c("Type", "Indicator", "Year", "Value")
+
+
+afkoma$deflated_values <- round(DeflateValues(value = afkoma$Value, years = afkoma$Year, base = "2020"), digits =0 ) 
+
+afkoma <-  afkoma %>% group_by(Year) %>% mutate ( Desc = case_when(
+  Indicator == "Virði afurða nytjaplönturæktar"                           ~ "Nytjaplöntur",
+  Indicator == "Þ.a. Vörutengdir styrkir og skattar af nytjaplönturækt"   ~ "Nytjaplöntur, styrkir",
+  Indicator == "Virði afurða búfjárræktar"                                ~ "Búfé og afurðir",
+  Indicator == "þ.a. Vörutengdir styrkir og skattar af búfjárrækt"        ~ "Styrkir, búfé",
+  Indicator == "Tekjur af landbúnaðarþjónustu"                            ~ "Landbúnaðarþjónusta",
+  Indicator == "Tekjur af óaðgreinanlegri aukastarfsemi"                  ~ "Tekjur af öðru",
+  Indicator == "Heildarframleiðsluvirði"                                  ~ "drop",
+  Indicator == "Kostnaður við aðfanganotkun"                              ~ "Aðfanganotkun",
+  Indicator == "Vergt vinnsluvirði"                                       ~ "drop",
+  Indicator == "Afskriftir fastafjármuna"                                 ~ "Afskriftir",
+  Indicator == "Hreint vinnsluvirði"                                      ~ "drop",
+  Indicator == "Aðrir framleiðslustyrkir"                                 ~ "drop",
+  Indicator == "Aðrir framleiðsluskattar"                                 ~ "drop",
+  Indicator == "Þáttatekjur"                                              ~ "drop",
+  Indicator == "Launakostnaður"                                           ~ "Laun",
+  Indicator == "Rekstrarhagnaður/einyrkjatekjur"                          ~ "drop",
+  Indicator == "Leiga og önnur leigugjöld af fasteignum sem ber að greiða (jarðaleiga)" ~ "Leiga",
+  Indicator == "Fjármagnsgjöld"                                           ~ "Fjármagnsgjöld",
+  Indicator == "Fjáreignatekjur"                                          ~ "Fjáreignatekjur",
+  Indicator == "Tekjur af atvinnurekstri"                                 ~ "Hagnaður"
+)) 
+save(afkoma, file ="afkoma.Rdata")
+
+```
+## Hagtölur
+
+[Hagstofa Íslands](https://www.hagstofa.is/talnaefni/atvinnuvegir/landbunadur/) heldur utan um og birtir upplýsingar um fjölda búfjár, uppskeru og kjötframleiðslu. Einnig gerir Hagstofan upp framleiðsluvirði og afkomu landbúnaðarins með notkunar á ýmsum gögnum samkvæmt samræmdum Evrópskum stöðlum. [Á mælaborði landbúnaðarins](https://www.stjornarradid.is/verkefni/atvinnuvegir/landbunadur/maelabord-landbunadarins-/) má finna ýmsar upplýsingar þar sem dregnar eru saman gögn úr skýrsluhaldi afurðastöðva, bænda, Hagstofunnar og Matvælastofnunnar.
+
+ - Um 4000 manns starfa í íslenskum landbúnaði og m.v. [greiningu Hagfræðistofnunar](https://rafhladan.is/bitstream/handle/10802/5085/C09_01.pdf?sequence=1) má ætla að um 9000 starfi í landbúnaði og tengdum greinum. Það eru tæplega einn af hverjum tuttugu starfandi á Íslandi. Hlutfall landbúnaðar í landsframleiðslu er um 1%, það er sambærilegt við aðrar vestrænar þjóðir þó að hlutfallið sé breytilegt. Stuðningur til landbúnaðar á fjárlögum er u.þ.b. 0,5% af vergri landsframleiðslu og 1,3% af útgjöldum ríkissjóðs árið 2021. Þessi hlutföll hafa farið lækkandi síðustu áratugi.
+
+- Lögbýli á Íslandi eru 6700, en um það bil 3000 þeirra eru í ábúð og í einhverskonar landbúnaðarstarfsemi. Jarðir á Íslandi eru ríflega 7700 og eru 50-55% af flatarmáli landsins.  
+
+---
+## Verðmætasköpun í íslenskum landbúnaði
+.left-column[ <small>
+- Árið 2019 var heildarframleiðsluvirði rúmir 42 ma.kr. á verðlagi ársins 2020 
+- Framleiðsluverð innifelur ekki styrki og hér er fóðri til eigin nota sleppt
+
+</small>]
+.right-column[
+
+```{r, echo= F, message= FALSE, fig.retina = 2}
+load("framleidsluverd.Rdata")
+test1 <- framleidsluverd %>% group_by(Year, Desc) %>% filter ( Desc != "drop" & Year == 2019 & Desc != "Gróffóður") %>% summarise( Total = round(sum(deflated_values), digits =0))
+
+test1$Year <- NULL
+tmp <- test1
+test1 <- rbind(tmp, c("Framleiðsluvirði", sum(test1$Total)))
+
+test1 <-test1 %>% arrange(factor(test1$Desc, levels = c("Nytjaplöntur",
+                                            # "Gróffóður",
+                                            "Kjöt og búfé",
+                                             "Mjólk",
+                                            "Egg",
+                                            "Ull og annað",
+                                            "Landbúnaðarþjónusta",
+                                             "Önnur starfsemi á búum",
+                                            "Framleiðsluvirði"
+                                            )))
+test1 <- test1  %>% 
+    mutate(Category = factor(Desc, levels = c("Nytjaplöntur",
+                                            "Kjöt og búfé",
+                                             "Mjólk",
+                                            "Egg",
+                                            "Ull og annað",
+                                            "Landbúnaðarþjónusta",
+                                             "Önnur starfsemi á búum",
+                                            "Framleiðsluvirði"
+                                            )),
+        ymax = round(cumsum(Total)/1000, 3),
+        ymin = lag(cumsum(Total)/1000, default = 0),
+        xmin = c(head(Category,-1), 8),
+        xmax = c(tail(Category,-1), 9),
+        # Impact = ifelse(Category %in% c(as.character(test1$Category[1]), as.character(test1$Category[nrow(test1)])),"Budget",
+        #                 ifelse(Total > 0, "Increase", "Decrease")
+        #    )
+        Impact = ifelse( Category == "Framleiðsluvirði", "Budget", ifelse( Total > 0, "Increase", "Decrease"))
+        )
+test1$ymax[8] <- test1$ymax[7]
+test1$ymin[8] <- 0
+g <- ggplot(test1) +
+        theme_bw()+
+        theme(legend.position = "right", panel.grid = element_blank(), 
+            axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+        labs(y = "Ma.kr. verðlag 2020", x = "", title = "Verðmætasköpun landbúnaðargeirans")
+w <- 0.6  #use to set width of bars
+
+g <- g +
+    geom_rect(aes(xmin = as.numeric(Category) - w/2,
+                  xmax = as.numeric(Category) + w/2, ymin = ymin, ymax = ymax,
+                  fill = Impact), colour = "black") +
+    scale_x_discrete(limits = c("Nytjaplöntur",
+                                            "Kjöt og búfé",
+                                             "Mjólk",
+                                            "Egg",
+                                            "Ull og annað",
+                                            "Landbúnaðarþjónusta",
+                                             "Önnur starfsemi á búum",
+                                "Framleiðsluvirði"
+                                            )) +
+    scale_fill_manual(values = (c("Decrease" = "blue", "Increase" = "lightgreen", "Budget" = "darkgreen")))
+g <- g+geom_segment(data = test1[1:(nrow(test1) -1),],aes(x = xmin,
+                                                       xend = xmax,
+                                                       y = ymax,
+                                                       yend = ymax))+ theme(legend.position = "none") +
+   annotate(
+    geom = "text", x = test1$xmin, y = (test1$ymin+(test1$ymax-test1$ymin)/2), 
+    label = round((test1$ymax-test1$ymin), digits=1), hjust = 0.5, vjust = 1.15, size = 4
+  )
+
+
+
+g
+``` 
+]
+---
+## Nytjaplöntur í vexti  
+.pull-left[ <small>
+Verðmætasköpun í nytjaplönturækt hefur aukist um 40% síðan 2007. Vöxturinn hefur fyrst og fremst verið í fersku grænmeti.
+
+Kornframleiðsla hefur dregist saman, vegna hás gengis, lágs verðs á korni erlendis og nokkurra lélegra ára í kornframleiðslu.
+  </small>]
+
+.pull-right[
+```{r, echo= F, message= FALSE, fig.retina = 2}
+source("C:/Users/kari/github_rep/Baendasamtok/utility_functions.R")
+load("framleidsluverd.Rdata")
+
+test1 <- framleidsluverd %>% group_by(Year) %>% filter (Desc == "Nytjaplöntur")
+test1 <- test1 %>% mutate( Lýsing = case_when( 
+    Product == "01.1 Hveiti og spelt"              ~ "Korn",
+  Product == "01.3 Bygg"                         ~ "Korn",
+  Product == "01.4 Hafrar og sumarkornsblöndur"  ~ "Korn",
+  Product == "04.1 Ferskt grænmeti"              ~ "Ferskt grænmeti",
+  Product == "04.2 Blómjurtir og aðrar plöntur"  ~ "Blóm og plöntur",
+  Product == "05 Kartöflur (þ.m.t. útsæði)"      ~ "Kartöflur"
+
+  ))
+ggplot(test1, aes(fill=Lýsing, y=deflated_values, x=Year)) + 
+    geom_bar(position="stack", stat="identity")+
+  labs(x = "",
+       y = "Milljónir kr. fast verðlag 2020",
+       title = "Verðmætasköpun í landbúnaði - nytjaplöntur",
+       caption = "Heimild: Hagstofa Íslands")+
+        scale_fill_hue(c=50, l=70 )+
+  theme_bw()+theme(legend.position = "top")
+
+```
+]
+---
+## Kjöt og búfé sundurliðað   
+.pull-left[ <small>
+Árið 2016 og '17 var verðfall á kindakjöti. Verð hafa hækkað í kjölfar þess að framleitt magn minnkaði.  
+
+Tollasamningur við ESB hefur einnig að öllum líkindum pressað niður verð á öðrum tegundum kjöts, sérstaklega nautakjöti. Niðurstaða þessara tveggja atburða er að verðmætasköpun í kjötframleiðslu bænda hefur lækkað að raunvirði síðustu ár.  </small>]
+.pull-right[
+```{r, echo= F, message= FALSE, fig.retina = 2}
+load("framleidsluverd.Rdata")
+test1 <- framleidsluverd %>% group_by(Year) %>% filter(  
+  Product == "11.1 Nautgripir"   |
+  Product == "11.2 Svín" |
+  Product == "11.3 Dýr af hestaætt"|
+  Product == "11.4 Sauðfé og geitur"|
+  Product == "11.5 Alifuglar"|
+  Product == "11.9 Önnur dýr"
+) %>% mutate(Lýsing = case_when(  
+  Product == "11.1 Nautgripir"                   ~ "Nautgripir",
+  Product == "11.2 Svín"                         ~ "Svín",
+  Product == "11.3 Dýr af hestaætt"              ~ "Hross",
+  Product == "11.4 Sauðfé og geitur"             ~ "Sauðfé og geitur",
+  Product == "11.5 Alifuglar"                    ~ "Alifuglar",
+  Product == "11.9 Önnur dýr"                    ~ "Önnur dýr",
+))
+
+test1$Lýsing <- factor(test1$Lýsing, levels = c( 
+                                                 "Önnur dýr",
+                                                   "Hross",
+                                                 "Svín",
+                                                "Nautgripir",
+                                                 "Alifuglar",
+                                                 "Sauðfé og geitur"))
+ggplot(test1, aes(fill=Lýsing, y=deflated_values, x=Year)) + 
+  geom_bar(position="stack", stat="identity")+
+  labs(x = "",
+       y = "Milljónir króna fast verðlag 2020",
+       title = "Verðmætasköpun í framleiðslu kjöts, skinna og lifandi dýra (hross)",
+       caption = "Heimild: Hagstofa Íslands")+
+      scale_fill_hue(c=50, l=70 )+
+  theme_bw()+theme(legend.position = "top")
+
+```
+]
+---
+## Mjólkurframleiðsla
+.pull-left[ <small>
+Eftirspurn og framleiðsla eftir mjólk jókst mikið árin 2013-2016. Vegna þessa varð mikil aukning í verðmætasköpun í íslenskri mjólkurframleiðslu.
+
+Hin síðustu ár hefur verið lítill vöxtur á innanlandsmarkaði og verð á mjólk til bænda dróst aftur úr verðlagi á árunum 2018-2019. 
+
+Hlutdeild innfluttra vara í heildarneyslu á mjólkurvörum hefur farið vaxandi eftir að tollasamningur við ESB tók gildi. 
+</small>]
+.pull-right[
+```{r, echo= F, message= FALSE, fig.retina = 2}
+load("framleidsluverd.Rdata")
+
+test1 <- framleidsluverd %>% group_by(Year) %>% filter(  
+  Product == "12.1 Mjólk" )  
+test1 <- test1 %>% mutate( Lýsing = "Mjólk")
+
+ggplot(test1, aes(fill=Lýsing, y=deflated_values, x=Year)) + 
+  geom_bar(position="stack", stat="identity")+
+  labs(x = "",
+       y = "Milljónir króna fast verðlag 2020",
+       title = "Verðmætasköpun í mjólkurframleiðslu",
+       caption = "Heimild: Hagstofa Íslands")+
+      scale_fill_hue(c=50, l=70 )+
+  theme_bw()+ theme(legend.position = "none")
+
+```
+]
+---
+## Egg
+.pull-left[ <small>
+Verðmætasköpun í eggjaframleiðslu hefur vaxið yfir allt tímabilið. Líklegt má þykja að mikil fjölgun ferðamanna á tímabilinu hafi haft hér mikið að segja. 
+
+Þó eru áskoranir vegna tollasamnings við ESB sem felldu niður tolla af ýmsum vörum sem innihalda egg, s.s. bökunarvörum.Það hefur gert íslenskum matvælaiðnaði erfiðara um vik að standast samkeppni og því eru íslenskar bökunarvörur að miklu leiti innfluttar.  
+
+</small>]
+.pull-right[
+```{r, echo= F, message= FALSE, fig.retina = 2}
+load("framleidsluverd.Rdata")
+
+test1 <- framleidsluverd %>% group_by(Year) %>% filter(  
+  Product == "12.2 Egg" )  
+test1 <- test1 %>% mutate( Lýsing = "Egg")
+ggplot(test1, aes(fill=Lýsing, y=deflated_values, x=Year)) + 
+  geom_bar(position="stack", stat="identity")+
+  labs(x = "",
+       y = "Milljónir króna fast verðlag 2020",
+       title = "Verðmætasköpun í eggjaframleiðslu",
+       caption = "Heimild: Hagstofa Íslands")+
+      scale_fill_hue(c=50, l=70 )+
+  theme_bw()+ theme(legend.position = "none")
+
+```
+]
+---
+## Önnur starfsemi á býlum  
+.pull-left[ <small> 
+Talsverður hluti búa hefur blandaðar tekjur, úr landbúnaði og annarri starfsemi. Ferðaþjónusta, t.d. gistiþjónusta eða laxveiði er víða mikilvægur þáttur í rekstri blandaðra búa. Tekjur úr öðrum rekstri en landbúnaði eru um 1/10 af heildartekjum landbúnaðargeirans.
+</small>]
+
+.pull-right[
+```{r, echo= F, message= FALSE, fig.retina = 2}
+load("framleidsluverd.Rdata")
+
+test1 <- framleidsluverd %>% group_by(Year) %>% filter(  
+  Desc == "Önnur starfsemi á búum" )  
+test1 <- test1 %>% mutate( Lýsing = "Önnur starfsemi á búum")
+ggplot(test1, aes(fill=Lýsing, y=deflated_values, x=Year)) + 
+  geom_bar(position="stack", stat="identity")+
+  labs(x = "",
+       y = "Milljónir króna fast verðlag 2020",
+       title = "Önnur starfsemi, óaðgreinanleg",
+       caption = "Heimild: Hagstofa Íslands")+
+      scale_fill_hue(c=50, l=70 )+
+  theme_bw()+ theme(legend.position = "none")
+
+```
+]
+---
+## Tekjur og gjöld  
+.left-column[
+Afkoma landbúnaðargeirans í heild er jákvæð um tæpa 3 ma.kr. árið 2019. 
+
+Það er talsvert undir meðaltali áranna 2010-2021, sem er 4,7 ma.kr.
+]
+.right-column[
+```{r, echo= F, message= FALSE, fig.retina = 2}
+load(file= "afkoma.Rdata")
+load("framleidsluverd.Rdata")
+
+afkoma_greining <- afkoma %>% mutate (Studningur = case_when( Indicator == "Virði afurða búfjárræktar" ~ "Markaðsvirði",
+                                                              Indicator == "þ.a. Vörutengdir styrkir og skattar af búfjárrækt" ~ "Stuðningur",
+                                                                Indicator == "Tekjur af landbúnaðarþjónustu" ~ "Markaðsvirði",
+                                                                Indicator == "Tekjur af óaðgreinanlegri aukastarfsemi" ~ "Markaðsvirði" ,
+                                                                Indicator == "Þ.a. Vörutengdir styrkir og skattar af nytjaplönturækt" ~ "Stuðningur",
+                                                              Indicator == "Virði afurða nytjaplönturæktar" ~ "Markaðsvirði"
+  
+)) %>% group_by(Year, Studningur) %>% filter ( Indicator == "Virði afurða nytjaplönturæktar" |
+                                                          Indicator == "Virði afurða búfjárræktar" |
+                                                          Indicator == "þ.a. Vörutengdir styrkir og skattar af búfjárrækt" |
+                                                          Indicator == "Tekjur af landbúnaðarþjónustu" |
+                                                          Indicator == "Tekjur af óaðgreinanlegri aukastarfsemi" | 
+                                                          Indicator == "Þ.a. Vörutengdir styrkir og skattar af nytjaplönturækt") %>% 
+  summarise( Samtals = sum(deflated_values))
+# write.csv2(x = afkoma_greining, file = "afkomasogulegt.csv")
+# 
+# write.csv2(x = afkoma, file = "afkoma2019.csv")
+groffodur <- framleidsluverd %>% filter(Desc == "Gróffóður" & Year == 2019) %>% pull(deflated_values)
+styrkir <-
+  afkoma %>% filter (
+    Indicator == "Þ.a. Vörutengdir styrkir og skattar af nytjaplönturækt" &Year ==2019 |
+      Indicator == "þ.a. Vörutengdir styrkir og skattar af búfjárrækt" & Year == 2019
+  ) %>% pull(deflated_values)
+test1 <- afkoma %>% group_by(Year, Desc) %>% filter ( Desc != "drop" & Year == 2019 & Desc != "Gróffóður") %>% summarise( Total = round(sum(deflated_values), digits =0))
+test1$Year <- NULL
+test1 <- test1 %>% mutate( Total = case_when( 
+  Desc == "Aðfanganotkun" ~ -Total+groffodur,
+  Desc == "Nytjaplöntur" ~ Total-groffodur - styrkir[1],
+  Desc == "Búfé og afurðir" ~ Total - styrkir[2],
+  Desc == "Laun" ~ -Total,
+  Desc == "Afskriftir" ~ -Total,
+  Desc =="Fjármagnsgjöld" ~ -Total,
+  Desc == "Leiga" ~ -Total,
+   Desc != "0" ~ Total
+  
+  ))
+test1$Total <- round(test1$Total)
+
+# tmp <- test1
+# test1 <- rbind(tmp, c("Framleiðsluvirði", sum(test1$Total)))
+
+test1 <-test1 %>% arrange(factor(test1$Desc, levels = c("Nytjaplöntur",
+                                                        "Nytjaplöntur, styrkir",
+                                                        "Búfé og afurðir",
+                                                        "Styrkir, búfé",
+                                                        "Landbúnaðarþjónusta",
+                                                        "Tekjur af öðru",
+                                                        "Aðfanganotkun",
+                                                        "Afskriftir",
+                                                        "Laun",
+                                                        "Fjármagnsgjöld",
+                                                        "Fjáreignatekjur",
+                                                        "Leiga",
+                                                        "Hagnaður"
+)))
+test1 <- test1  %>% 
+  mutate(Category = factor(Desc, levels = c(
+                                                        "Nytjaplöntur",
+                                                        "Nytjaplöntur, styrkir",
+                                                        "Búfé og afurðir",
+                                                        "Styrkir, búfé",
+                                                        "Landbúnaðarþjónusta",
+                                                        "Tekjur af öðru",
+                                                        "Aðfanganotkun",
+                                                        "Afskriftir",
+                                                        "Laun",
+                                                        "Fjármagnsgjöld",
+                                                        "Fjáreignatekjur",
+                                                        "Leiga",
+                                                        "Hagnaður"
+  )),
+  ymax = round(cumsum(Total)/1000, 3),
+  ymin = lag(cumsum(Total)/1000, default = 0),
+  xmin = c(head(Category,-1), 13),
+  xmax = c(tail(Category,-1), 14),
+  # Impact = ifelse(Category %in% c(as.character(test1$Category[1]), as.character(test1$Category[nrow(test1)])),"Budget",
+  #                 ifelse(Total > 0, "Increase", "Decrease")
+  #    )
+  Impact = ifelse( Category == "Hagnaður", "Budget", ifelse( Total > 0, "Increase", "Decrease"))
+  )
+test1$ymax[12] <- test1$ymax[11]
+test1$ymin[12] <- 0
+g <- ggplot(test1) +
+  theme_bw()+
+  theme(legend.position = "right", panel.grid = element_blank(), 
+        axis.text.x = element_text(angle = 45, vjust = 0.65)) +
+  labs(y = "Ma.kr. verðlag 2020", x = "", title = "Uppbygging rekstrar landbúnaðargeirans")
+w <- 0.6  #use to set width of bars
+
+g <- g +
+  geom_rect(aes(xmin = as.numeric(Category) - w/2,
+                xmax = as.numeric(Category) + w/2, ymin = ymin, ymax = ymax,
+                fill = Impact), colour = "black") +
+  scale_x_discrete(limits = c("Nytjaplöntur",
+                              "Nytjaplöntur, styrkir",
+                              "Búfé og afurðir",
+                              "Styrkir, búfé",
+                              "Landbúnaðarþjónusta",
+                              "Tekjur af öðru",
+                              "Aðfanganotkun",
+                              "Afskriftir",
+                              "Laun",
+                              "Fjármagnsgjöld",
+                              "Fjáreignatekjur",
+                              "Leiga",
+                              "Hagnaður"
+  )) +
+  scale_fill_manual(values = (c("Decrease" = "lightblue", "Increase" = "lightgreen", "Budget" = "darkgreen")))
+g <- g+geom_segment(data = test1[1:(nrow(test1) -1),],aes(x = xmin,
+                                                          xend = xmax,
+                                                          y = ymax,
+                                                          yend = ymax))+ theme(legend.position = "none") +
+  annotate(
+    geom = "text", x = test1$xmin, y = (test1$ymin+(test1$ymax-test1$ymin)/2.25), 
+    label = round((test1$ymax-test1$ymin), digits=1), hjust = 0.5, vjust = 1.55, size = 4
+  )
+
+
+
+g
+```
+]
