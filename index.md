@@ -3,7 +3,7 @@
 
 Hér er kynning á hagtölum í landbúnaði
 
-[Slóð á kynningu](/xaringan_test_slides.html)
+[Slóð á kynningu](/kynning_hagtolur/xaringan_test_slides.html)
 
 
 ### Embed
